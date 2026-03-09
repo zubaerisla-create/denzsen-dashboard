@@ -1,0 +1,42 @@
+name: Build and Deploy Docker Image
+ 
+on:
+  push:
+    branches:
+      - main
+ 
+jobs:
+ 
+  build-and-push:
+    runs-on: ubuntu-latest
+ 
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+ 
+      - name: Login to GHCR
+        run: echo ${{ secrets.GHCR_TOKEN }} | docker login ghcr.io -u ${{ secrets.GHCR_USERNAME }} --password-stdin
+ 
+      - name: Build Docker image
+        run: docker build -t ghcr.io/${{ secrets.GHCR_USERNAME }}/denzsen:latest .
+ 
+      - name: Push Docker image
+        run: docker push ghcr.io/${{ secrets.GHCR_USERNAME }}/denzsen:latest
+ 
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+ 
+    steps:
+ 
+      - name: Deploy on EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            docker pull ghcr.io/${{ secrets.GHCR_USERNAME }}/denzsen:latest
+            docker stop denzsen || true
+            docker rm denzsen || true
+            docker run -d -p 3000:3000 --name denzsen ghcr.io/${{ secrets.GHCR_USERNAME }}/denzsen:latest
