@@ -61,8 +61,8 @@ export default function Login() {
           <div className="bg-[#507493] rounded-2xl p-5 mb-3">
             <Shield className="w-14 h-14 text-white" />
           </div>
-          <h1 className="text-2xl font-bold">Admin Panel Testing</h1>
-          <p className="text-gray-600">Sign in to access the dashboard</p>
+          <h1 className="text-2xl font-bold">Admin Panel</h1>
+          <p className="text-gray-6 00">Sign in to access the dashboard</p>
         </div>
 
         <div className="bg-white shadow-xl rounded-3xl p-6">
