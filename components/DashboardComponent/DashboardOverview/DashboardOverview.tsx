@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Phone, MapPin, Clock, FileText, ArrowUpCircle } from 'lucide-react';
 import { 
@@ -9,6 +10,11 @@ import {
   useGetRecentCasesQuery 
 } from '@/redux/services/api';
 import { formatDate } from '@/utils/formatDate';
+
+const DashboardMap = dynamic(() => import('./DashboardMap'), {
+  ssr: false,
+  loading: () => <div className="h-[400px] w-full bg-gray-100 animate-pulse rounded-2xl flex items-center justify-center text-gray-400 border border-gray-100">Initializing Map Engine...</div>
+});
 
 export default function DashboardOverview() {
   // Add mounted state to handle client-side only rendering
@@ -197,6 +203,11 @@ export default function DashboardOverview() {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Intelligence Map Section */}
+        <div className="w-full">
+          <DashboardMap />
         </div>
 
         {/* Main Content Grid */}

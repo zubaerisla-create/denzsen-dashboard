@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ChevronLeft, Calendar, User, MapPin, Phone, Mail, FileText, Image as ImageIcon, X, Eye, Loader2, Search } from 'lucide-react';
@@ -30,8 +30,11 @@ interface CaseData {
   location: string;
   approved_by: string;
   status: string;
+  event_details?: string;
+  actions_taken?: string;
   evidence: Evidence[];
   reporter: Reporter;
+  members?: any[];
 }
 
 export default function CaseDetails() {
@@ -48,17 +51,21 @@ export default function CaseDetails() {
   
   const [eventDetails, setEventDetails] = useState('');
   const [actionsTaken, setActionsTaken] = useState('');
+  const [caseDescription, setCaseDescription] = useState('');
+  const [caseLocation, setCaseLocation] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [isAssigning, setIsAssigning] = useState(false);
   const [searchUser, setSearchUser] = useState('');
 
-  // Initialize editable fields when data is loaded
-  useState(() => {
+  useEffect(() => {
     if (caseData) {
       setEventDetails((caseData as any).event_details || '');
       setActionsTaken((caseData as any).actions_taken || '');
+      setCaseDescription(caseData.description || '');
+      setCaseLocation(caseData.location || '');
     }
-  });
+  }, [caseData]);
 
   const userRole = profileData?.role?.toLowerCase() || '';
   const canAddMember = ['admin', 'director', 'analyst'].includes(userRole);
@@ -133,6 +140,8 @@ export default function CaseDetails() {
         caseId,
         event_details: eventDetails,
         actions_taken: actionsTaken,
+        description: caseDescription,
+        address: caseLocation,
       }).unwrap();
       Swal.fire({
         title: 'Updated!',
@@ -141,6 +150,7 @@ export default function CaseDetails() {
         confirmButtonColor: '#507493',
         timer: 1500,
       });
+      setIsEditing(false);
       refetch();
     } catch (err) {
       Swal.fire({
@@ -165,7 +175,7 @@ export default function CaseDetails() {
       setIsUpdating(true);
       try {
         const updateData: any = { caseId, status: newStatus };
-        if (newStatus.toLowerCase() === 'active' && profileData) {
+        if (['active', 'dispatched'].includes(newStatus.toLowerCase()) && profileData) {
           updateData.approved_by = profileData.full_name;
         }
         
@@ -286,58 +296,72 @@ export default function CaseDetails() {
                       <User className="w-5 h-5 text-[#507493]" />
                       <div>
                         <p className="text-sm text-gray-600">Approved By</p>
-                        <p className="font-semibold">{caseData.approved_by}</p>
+                        <p className="font-semibold">{caseData.approved_by || 'Pending Approval'}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
                       <MapPin className="w-5 h-5 text-[#507493]" />
                       <div>
                         <p className="text-sm text-gray-600">Location</p>
-                        <p className="font-semibold">{caseData.location}</p>
+                        {isEditing ? (
+                          <input 
+                            type="text"
+                            value={caseLocation}
+                            onChange={(e) => setCaseLocation(e.target.value)}
+                            className="font-semibold bg-white border-b border-blue-300 focus:outline-none focus:border-blue-600 w-full"
+                          />
+                        ) : (
+                          <p className="font-semibold">{caseData.location}</p>
+                        )}
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-3">
-                  <span className={`px-6 py-3 text-lg font-bold rounded-full ${getStatusColor(caseData.status)}`}>
-                    {caseData.status}
-                  </span>
+                <div className="flex flex-col items-end gap-4">
+                  {/* Current Status Badge */}
+                  <div className="flex flex-col items-end gap-1">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mr-2">Current Case Status</p>
+                    <span className={`px-8 py-3 text-xl font-black rounded-2xl shadow-sm border ${getStatusColor(caseData.status)}`}>
+                      {caseData.status}
+                    </span>
+                  </div>
                   
+                  {/* Action Buttons Section */}
                   {!isCaseClosed && (
-                    <>
+                    <div className="bg-white/50 backdrop-blur-sm p-3 rounded-2xl border border-gray-100 flex flex-wrap items-center justify-end gap-2 shadow-sm">
+                      <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest px-2">Protocol Actions:</p>
                       <button
                         onClick={() => handleChangeStatus('Dispatched')}
                         disabled={isUpdating}
-                        className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg transition"
+                        className="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 text-sm font-bold rounded-xl transition shadow-sm hover:shadow-md active:scale-95 disabled:opacity-50"
                       >
-                        Dispatch
+                        DISPATCH
                       </button>
                       <button
                         onClick={() => handleChangeStatus('Active')}
                         disabled={isUpdating}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition"
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 text-sm font-bold rounded-xl transition shadow-sm hover:shadow-md active:scale-95 disabled:opacity-50"
                       >
-                        Activate
+                        ACTIVATE
                       </button>
                       <button
                         onClick={() => handleChangeStatus('Resolved')}
                         disabled={isUpdating}
-                        className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition"
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 text-sm font-bold rounded-xl transition shadow-sm hover:shadow-md active:scale-95 disabled:opacity-50"
                       >
-                        Resolve
+                        RESOLVE
                       </button>
-                    {canCloseCase && (
-                      <button 
-                        onClick={handleCloseCase}
-                        disabled={isClosing || isUpdating}
-                        className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition flex items-center gap-2"
-                      >
-                        <X className="w-4 h-4" />
-                        Close
-                      </button>
-                    )}
-                    </>
+                      {canCloseCase && (
+                        <button 
+                          onClick={handleCloseCase}
+                          disabled={isClosing || isUpdating}
+                          className="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 text-sm font-bold rounded-xl transition shadow-sm hover:shadow-md active:scale-95 disabled:opacity-50 flex items-center gap-2"
+                        >
+                          CLOSE
+                        </button>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>
@@ -347,43 +371,97 @@ export default function CaseDetails() {
             <div className="p-8 grid grid-cols-1 lg:grid-cols-3 gap-10">
               {/* Left - Description & Attachments */}
               <div className="lg:col-span-2 space-y-10">
-                <div className="space-y-6">
-                  <div>
-                    <h2 className="text-2xl font-bold mb-4">Case Description</h2>
-                    <p className="text-gray-700 text-lg leading-relaxed bg-gray-50 p-4 rounded-lg">{caseData.description}</p>
+                <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 space-y-8">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-2xl font-bold text-gray-900">Intelligence Briefing</h2>
+                    {!isEditing && !isCaseClosed && (
+                      <button 
+                        onClick={() => setIsEditing(true)}
+                        className="text-sm font-bold text-[#507493] hover:text-[#406383] flex items-center gap-2 px-4 py-2 bg-blue-50 rounded-lg transition"
+                      >
+                        <FileText className="w-4 h-4" />
+                        EDIT BRIEFING
+                      </button>
+                    )}
                   </div>
 
-                  <div>
-                    <h2 className="text-xl font-bold mb-3">Event Details</h2>
-                    <textarea
-                      value={eventDetails}
-                      onChange={(e) => setEventDetails(e.target.value)}
-                      placeholder="Enter event details..."
-                      rows={4}
-                      className="w-full p-4 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none"
-                    />
-                  </div>
+                  <div className="space-y-8">
+                    <div>
+                      <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-2">Initial Case Description</h3>
+                      {isEditing ? (
+                        <textarea
+                          value={caseDescription}
+                          onChange={(e) => setCaseDescription(e.target.value)}
+                          rows={3}
+                          className="w-full p-4 bg-white border border-blue-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none resize-none transition-all shadow-inner text-gray-700 italic"
+                        />
+                      ) : (
+                        <div className="text-gray-700 text-lg leading-relaxed bg-gray-50/50 p-6 rounded-xl border border-dashed border-gray-200 italic">
+                          "{caseData.description}"
+                        </div>
+                      )}
+                    </div>
 
-                  <div>
-                    <h2 className="text-xl font-bold mb-3">Actions Taken</h2>
-                    <textarea
-                      value={actionsTaken}
-                      onChange={(e) => setActionsTaken(e.target.value)}
-                      placeholder="Enter actions taken..."
-                      rows={4}
-                      className="w-full p-4 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none"
-                    />
-                  </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      <div className="space-y-3">
+                        <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider">Detailed Event Intelligence</h3>
+                        {isEditing ? (
+                          <textarea
+                            value={eventDetails}
+                            onChange={(e) => setEventDetails(e.target.value)}
+                            placeholder="Enter detailed intelligence gathered..."
+                            rows={6}
+                            className="w-full p-4 bg-white border border-blue-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none resize-none transition-all shadow-inner"
+                          />
+                        ) : (
+                          <div className="p-4 bg-blue-50/30 border border-blue-100 rounded-xl min-h-[120px] text-gray-700">
+                            {caseData.event_details || <span className="text-gray-400 italic">No intelligence reported yet.</span>}
+                          </div>
+                        )}
+                      </div>
 
-                  <div className="flex justify-end">
-                    <button
-                      onClick={handleUpdateDetails}
-                      disabled={isUpdating}
-                      className="bg-[#507493] text-white px-8 py-3 rounded-lg hover:bg-[#406383] transition flex items-center gap-2"
-                    >
-                      {isUpdating && <Loader2 className="w-4 h-4 animate-spin" />}
-                      Save Updates
-                    </button>
+                      <div className="space-y-3">
+                        <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider">Actions Taken & Protocols</h3>
+                        {isEditing ? (
+                          <textarea
+                            value={actionsTaken}
+                            onChange={(e) => setActionsTaken(e.target.value)}
+                            placeholder="Document all actions and applied protocols..."
+                            rows={6}
+                            className="w-full p-4 bg-white border border-blue-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none resize-none transition-all shadow-inner"
+                          />
+                        ) : (
+                          <div className="p-4 bg-green-50/30 border border-green-100 rounded-xl min-h-[120px] text-gray-700">
+                            {caseData.actions_taken || <span className="text-gray-400 italic">No actions documented yet.</span>}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {isEditing && (
+                      <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+                        <button
+                          onClick={() => {
+                            setIsEditing(false);
+                            setEventDetails((caseData as any).event_details || '');
+                            setActionsTaken((caseData as any).actions_taken || '');
+                            setCaseDescription(caseData.description || '');
+                            setCaseLocation(caseData.location || '');
+                          }}
+                          className="px-6 py-2.5 text-sm font-bold text-gray-600 hover:bg-gray-100 rounded-lg transition"
+                        >
+                          CANCEL
+                        </button>
+                        <button
+                          onClick={handleUpdateDetails}
+                          disabled={isUpdating}
+                          className="bg-[#507493] text-white px-8 py-2.5 rounded-lg hover:bg-[#406383] transition flex items-center gap-2 font-bold text-sm shadow-md"
+                        >
+                          {isUpdating ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
+                          COMMIT UPDATES
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
 

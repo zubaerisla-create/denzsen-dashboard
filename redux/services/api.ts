@@ -79,4 +79,5 @@ export const {
   useUpdateProfileMutation,
   useChangePasswordMutation,
   useCreateDispatchMutation,
+  useGetDispatchesQuery,
 } = api;

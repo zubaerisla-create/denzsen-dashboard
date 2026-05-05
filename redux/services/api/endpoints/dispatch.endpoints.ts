@@ -15,6 +15,14 @@ export const dispatchEndpoints = (builder: ApiEndpointBuilder) => ({
       method: 'POST',
       body,
     }),
-    invalidatesTags: ['Cases'], // Dispatch creation might affect case list
+    invalidatesTags: ['Cases'],
+  }),
+
+  getDispatches: builder.query<Dispatch[], void>({
+    query: () => ({
+      url: '/api/v1/admin/dispatches',
+      method: 'GET',
+    }),
+    providesTags: ['Cases'],
   }),
 });

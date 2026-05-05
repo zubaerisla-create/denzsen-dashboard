@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { Eye, Search, Download, ChevronLeft, ChevronRight, Loader2, Filter, Plus, MapPin, X } from 'lucide-react';
 import Link from 'next/link';
 import Swal from 'sweetalert2';
@@ -17,6 +18,11 @@ interface Case {
   status: string;
   created_at: string;
 }
+
+const LocationPicker = dynamic(() => import('./LocationPicker'), { 
+  ssr: false,
+  loading: () => <div className="h-64 w-full bg-gray-100 animate-pulse rounded-lg flex items-center justify-center text-gray-400">Loading Map...</div>
+});
 
 export default function CaseList() {
   const [currentPage, setCurrentPage] = useState(1);
@@ -375,54 +381,27 @@ export default function CaseList() {
             </div>
 
             <form onSubmit={handleDispatchSubmit} className="p-6 space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Case Number</label>
-                  <input
-                    type="text"
-                    required
-                    value={dispatchData.case_number}
-                    onChange={(e) => setDispatchData({ ...dispatchData, case_number: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                    placeholder="CASE-2024-001"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
-                  <input
-                    type="text"
-                    required
-                    value={dispatchData.address}
-                    onChange={(e) => setDispatchData({ ...dispatchData, address: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                    placeholder="123 Main St, City"
-                  />
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Select Location on Map</label>
+                <LocationPicker 
+                  onLocationSelect={(lat, lng, address) => {
+                    setDispatchData({ ...dispatchData, lat, long: lng, address });
+                  }}
+                  initialLat={dispatchData.lat || undefined}
+                  initialLng={dispatchData.long || undefined}
+                />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Latitude</label>
-                  <input
-                    type="number"
-                    step="any"
-                    required
-                    value={dispatchData.lat}
-                    onChange={(e) => setDispatchData({ ...dispatchData, lat: parseFloat(e.target.value) })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Longitude</label>
-                  <input
-                    type="number"
-                    step="any"
-                    required
-                    value={dispatchData.long}
-                    onChange={(e) => setDispatchData({ ...dispatchData, long: parseFloat(e.target.value) })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                  />
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Case Number (Related)</label>
+                <input
+                  type="text"
+                  required
+                  value={dispatchData.case_number}
+                  onChange={(e) => setDispatchData({ ...dispatchData, case_number: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  placeholder="CASE-2024-001"
+                />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
