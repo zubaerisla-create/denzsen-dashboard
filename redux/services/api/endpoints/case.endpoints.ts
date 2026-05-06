@@ -44,6 +44,8 @@ export const caseEndpoints = (builder: ApiEndpointBuilder) => ({
     actions_taken?: string;
     approved_by?: string;
     status?: string;
+      description?: string;
+      address?: string;
   }>({
     query: ({ caseId, ...data }) => ({
       url: `/api/v1/admin/cases/${caseId}/details`,
