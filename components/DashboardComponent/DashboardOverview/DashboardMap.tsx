@@ -18,9 +18,12 @@ const defaultCenter = {
   lng: 3.3792
 };
 
+const libraries: ("places")[] = ["places"];
+
 export default function DashboardMap() {
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
+    libraries
   });
 
   const { data: dispatches, isLoading, isError } = useGetDispatchesQuery();
