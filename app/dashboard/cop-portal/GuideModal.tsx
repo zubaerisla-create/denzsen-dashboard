@@ -67,7 +67,6 @@ export default function GuideModal({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // You can add size/type validation here if needed
     if (file.size > 5 * 1024 * 1024) { // example: max 5MB
       alert('Image size should be less than 5MB');
       return;
@@ -76,59 +75,9 @@ export default function GuideModal({
     const reader = new FileReader();
     reader.onload = () => {
       const base64 = reader.result as string;
-      onImageUrlChange(base64); // ← storing base64 in state
-      // Alternative (recommended): upload to server → get real URL
-      // uploadImage(file).then(url => onImageUrlChange(url));
+      onImageUrlChange(base64);
     };
     reader.readAsDataURL(file);
-  };
-
-  const handleSubmit = async () => {
-    if (!guideTitle.trim() || !guideDescription.trim() || !guideResetTime.trim()) {
-      alert('Please fill all required fields');
-      return;
-    }
-
-    try {
-      const formattedSections = guideSections
-        .filter(section => section.title.trim() && section.content.trim())
-        .map(section => ({
-          title: section.title.trim(),
-          content: section.content.trim()
-        }));
-
-      if (formattedSections.length === 0) {
-        alert('Please add at least one section with title and content');
-        return;
-      }
-
-      const requestData = {
-        title: guideTitle.trim(),
-        description: guideDescription.trim(),
-        read_time: guideResetTime.trim(),
-        sections: formattedSections,
-        thumbnail_url: guideImageUrl.trim() || null
-        // Note: if you're sending base64 → backend must handle it
-        // Better → upload file separately & send only URL
-      };
-
-      console.log('Submitting guide data:', requestData);
-
-      let response;
-      if (editingGuideId) {
-        response = await updateContent({ id: editingGuideId, data: requestData }).unwrap();
-      } else {
-        response = await createGuideContent(requestData).unwrap();
-      }
-
-      console.log('Success response:', response);
-      onSubmit();
-
-    } catch (error: any) {
-      console.error('Error saving guide:', error);
-      const errorMessage = error?.data?.message || error?.data?.detail || 'Failed to save guide.';
-      alert(`Error: ${errorMessage}`);
-    }
   };
 
   if (!isOpen) return null;
@@ -289,7 +238,7 @@ export default function GuideModal({
             Cancel
           </button>
           <button
-            onClick={handleSubmit}
+            onClick={onSubmit}
             disabled={!guideTitle.trim() || !guideDescription.trim() || !guideResetTime.trim()}
             className="px-5 py-2 bg-[#507493] text-white rounded-lg hover:bg-[#507493]/80 transition-colors disabled:bg-[#507493]/60 disabled:cursor-not-allowed"
           >
