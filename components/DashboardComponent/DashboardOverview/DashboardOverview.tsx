@@ -228,7 +228,7 @@ export default function DashboardOverview() {
               
               <div className="h-48 sm:h-56 md:h-64">
                 {weeklyData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height="100%">
+                  <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                     <BarChart 
                       data={weeklyData}
                       margin={{ top: 10, right: 10, left: 0, bottom: 5 }}
